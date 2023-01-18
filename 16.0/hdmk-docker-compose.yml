@@ -1,0 +1,53 @@
+version: '3.1'
+services:
+  webhdmk:
+    image: nnps255/erp:16.0.0
+    depends_on:
+      - db
+    ports:
+      - "8094:8069"
+    volumes:
+      - hdmk-odoo-web-data:/var/lib/odoo
+      - ./config:/etc/odoo
+      - ./addons:/mnt/extra-addons
+      - ./backups:/mnt/backups
+    environment:
+      - HOST=db
+      - USER=odoo
+      - PASSWORD=!odooP@ssw0rd%
+      - TZ=Asia/Kuala_Lumpur
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=node1_default
+      - traefik.http.routers.hdmkodoo16.entrypoints=websecure
+      - traefik.http.routers.hdmkodoo16.rule=Host(`hdmk.emkay.com.my`)
+      #- traefik.http.routers.hdmkodoo16.middlewares=zlodoo16-https@docker
+      #- traefik.http.routers.hdmkodoo16.middlewares=secureHeader@file
+      - traefik.http.routers.hdmkodoo16.tls.certresolver=myresolver
+      - traefik.port=8094
+    networks:
+      - node1_default
+      - backend-hdmk
+  db:
+    image: postgres:13
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=odoo
+      - POSTGRES_PASSWORD=!odooP@ssw0rd%
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    volumes:
+      - hdmk-odoo-db-data:/var/lib/postgresql/data/pgdata
+    restart: unless-stopped
+    networks:
+      - backend-hdmk
+
+volumes:
+  hdmk-odoo-web-data:
+  hdmk-odoo-db-data:
+
+networks:
+  node1_default:
+    external: true
+  backend-hdmk:
+    external: false
